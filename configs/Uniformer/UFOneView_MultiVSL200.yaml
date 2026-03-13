@@ -4,7 +4,8 @@ data:
   base_url: /home/ibmelab/Documents/GG/VSLRecognition/vsl
   dataset_name: VN_SIGN
   temporal_stride: 2
-  num_output_frames: 16
+  num_output_frames: 20
+  # num_output_frames: 16
   transform_cfg:
     index_setting:
       - segment #train_p
