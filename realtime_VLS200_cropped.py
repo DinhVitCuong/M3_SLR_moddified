@@ -11,7 +11,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from utils.misc import load_config
+from utils.misc import load_config, load_label_map
 from utils.utils import load_model
 from utils.video_augmentation import Compose, Resize, ToFloatTensor, PermuteImage, Normalize
 from slr_cropper import SLRCropper
@@ -122,77 +122,6 @@ def get_input_fps(cap, args) -> Tuple[float, float, float]:
 
     return reported_fps, measured_fps, float(camera_fps)
 
-def parse_csv_like_label_map(path: Path) -> Optional[Dict[int, str]]:
-    suffix = path.suffix.lower()
-    delimiter = ","
-    if suffix == ".tsv":
-        delimiter = "\t"
-
-    try:
-        with open(path, "r", encoding="utf-8-sig", newline="") as f:
-            reader = csv.DictReader(f, delimiter=delimiter)
-            fieldnames = reader.fieldnames or []
-            lower_to_real = {c.lower(): c for c in fieldnames}
-
-            id_candidates = ["label_id", "id", "idx", "class_id", "label", "label_idx"]
-            text_candidates = ["gloss", "keyword", "word", "meaning", "name", "label_name", "class_name", "text"]
-
-            id_col = next((lower_to_real[c] for c in id_candidates if c in lower_to_real), None)
-            txt_col = next((lower_to_real[c] for c in text_candidates if c in lower_to_real), None)
-
-            if id_col is not None and txt_col is not None:
-                out = {}
-                for row in reader:
-                    try:
-                        out[int(row[id_col])] = str(row[txt_col])
-                    except Exception:
-                        continue
-                if out:
-                    return out
-    except Exception:
-        return None
-
-    # fallback: try first 2 columns
-    try:
-        with open(path, "r", encoding="utf-8-sig", newline="") as f:
-            raw_reader = csv.reader(f, delimiter=delimiter)
-            rows = list(raw_reader)
-        if len(rows) < 2:
-            return None
-
-        out = {}
-        ok_any = False
-        for row in rows[1:]:
-            if len(row) < 2:
-                continue
-            try:
-                out[int(row[0])] = str(row[1])
-                ok_any = True
-            except Exception:
-                continue
-
-        if ok_any:
-            return out
-    except Exception:
-        return None
-
-    return None
-
-def load_label_map(label_map_csv: Optional[Path], num_classes: int) -> Tuple[Dict[int, str], Optional[Path]]:
-    if label_map_csv is not None:
-        if not label_map_csv.exists():
-            raise FileNotFoundError(f"Không tìm thấy label map csv: {label_map_csv}")
-        parsed = parse_csv_like_label_map(label_map_csv)
-        if parsed is None:
-            raise ValueError(
-                "Không parse được label map csv."
-            )
-        for i in range(num_classes):
-            parsed.setdefault(i, f"cls_{i}")
-        return parsed, label_map_csv
-
-    return {i: f"cls_{i}" for i in range(num_classes)}, None
-
 
 def preprocess_frame_bgr(frame_bgr: np.ndarray, transform) -> torch.Tensor:
     frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
@@ -272,7 +201,7 @@ def overlay_preview(base_img: np.ndarray, preview_img: Optional[np.ndarray], tit
 def main():
     parser = argparse.ArgumentParser("Realtime/Offline UFOneView MultiVSL200 inference")
     parser.add_argument("--repo-root", type=str, default=".")
-    parser.add_argument("--config", type=str, default="configs/Uniformer/test_cfg/UFOneView_MultiVSL200_realtime.yaml")
+    parser.add_argument("--config", type=str, default="configs/UFOneView_MultiVSL200_realtime.yaml")
     parser.add_argument("--checkpoint", type=str, required=True)
 
     parser.add_argument("--input-mode", type=str, default="webcam", choices=["webcam", "video"])
@@ -296,7 +225,7 @@ def main():
     parser.add_argument("--sampling-mode", type=str, default="segment_center", choices=["segment_center", "segment_random"])
     parser.add_argument("--seed", type=int, default=42)
 
-    parser.add_argument("--label-map-csv", type=str, default="Z:\SignLanguageReg\M3-SLR\data\MultiVSL200\lookuptable.csv", help="Đường dẫn tới file CSV có cột: id_label_in_documents, name")
+    parser.add_argument("--label-map-csv", type=str, default="data/lookuptable.csv", help="Đường dẫn tới file CSV có cột: id_label_in_documents, name")
     parser.add_argument("--min-confidence", type=float, default=0.3)
     parser.add_argument("--print-mode", type=str, default="change", choices=["always", "change"])
     parser.add_argument("--topk", type=int, default=3)
@@ -503,4 +432,4 @@ Có các input mode:
 #python realtime_VLS200_cropped.py --input-mode webcam --camera-url "http://192.168.1.123:81/stream" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --use-slr-crop --show
 
 # video
-#python realtime_VLS200_cropped.py --input-mode video --video-path "Z:\SignLanguageReg\VSL_data\New folder\01_Co-Hien_100-200_1-2-3_0118___center_device10_signer01_center_ord1_178.mp4" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --show 
+#python realtime_VLS200_cropped.py --input-mode video --video-path "Z:\SignLanguageReg\VSL_data\New folder\14_Bao-Nam_1-200_13-14-15_0112___center_device19_signer14_center_ord1_36.mp4" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --show 
