@@ -1,6 +1,4 @@
-from copyreg import pickle
 import yaml
-from sklearn.model_selection import KFold
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import csv

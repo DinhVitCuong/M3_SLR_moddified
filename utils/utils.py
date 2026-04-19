@@ -7,8 +7,6 @@ import torch
 from trainer.tools import MyCustomLoss,MultipleMSELoss
 from torchvision import models
 from torch.nn import functional as F
-from collections import OrderedDict
-from pytorch_lightning.utilities.migration import pl_legacy_patch
 
 def load_criterion(train_cfg):
     criterion = None

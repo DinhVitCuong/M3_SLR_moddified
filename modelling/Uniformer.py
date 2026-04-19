@@ -392,9 +392,82 @@ class UFThreeView(nn.Module):
         return {'logits': logits}   
             
 
+# class UsimKD(nn.Module):
+#     def __init__(self, num_classes=199, embed_size=512, pretraiend=True, pretrained_name=None, device=None, **kwargs):
+#         super().__init__()
+#         self.teacher = UFThreeView(
+#             num_classes=num_classes,
+#             embed_size=embed_size,
+#             pretraiend=False,
+#             pretrained_left=None,
+#             pretrained_center=None,
+#             pretrained_right=None,
+#             co_attetion=True,
+#             maskFeat=False,
+#             device=device
+#         )
+#         ckpt_path = ""
+#         self.teacher.load_state_dict(torch.load(ckpt_path,map_location='cpu'))
+#         for param in self.teacher.parameters():
+#             param.requires_grad = False
+#         self.teacher_classifier = self.teacher.head
+        
+#         self.student = UFOneView(
+#             num_classes=num_classes,
+#             maskFeat=False,
+#             pretraiend=pretraiend,
+#             pretrained_name=pretrained_name,
+#             device=device
+#         )
+   
+#         s_n = embed_size  
+#         t_n = embed_size * 3  
+ 
+#         self.projection = nn.Sequential(
+#             nn.Linear(s_n,t_n*2),
+#             nn.LayerNorm(t_n*2),
+#             nn.GELU(),
+#             nn.Linear(t_n*2,t_n)
+#         )
+
+#         if device is not None:
+#             self.to(device)
+
+#     def forward(self, rgb_left=None, rgb_center=None, rgb_right=None):
+#         logits = None
+#         student_ft = None
+#         teacher_ft = None
+
+#         if self.training:
+#             self.teacher.eval()
+#             teacher_ft = self.teacher.forward_ft(rgb_left=rgb_left, rgb_center=rgb_center, rgb_right=rgb_right).detach()
+#             student_ft = self.student.forward_ft(rgb_center)
+#             student_ft = self.projection(student_ft)
+#         else:
+#             self.student.eval()
+#             student_ft = self.student.forward_ft(rgb_center)
+#             student_ft = self.projection(student_ft)
+#             logits = self.teacher_classifier(student_ft)
+
+#         return {
+#             'trans_feat_s': student_ft,
+#             'trans_feat_t': teacher_ft,
+#             'logits': logits
+#         }
+
 class UsimKD(nn.Module):
-    def __init__(self, num_classes=199, embed_size=512, pretraiend=True, pretrained_name=None, device=None, **kwargs):
+    def __init__(
+        self,
+        num_classes=199,
+        embed_size=512,
+        pretraiend=True,
+        pretrained_name=None,
+        teacher_ckpt_path=None,
+        device=None,
+        **kwargs
+    ):
         super().__init__()
+
         self.teacher = UFThreeView(
             num_classes=num_classes,
             embed_size=embed_size,
@@ -406,12 +479,22 @@ class UsimKD(nn.Module):
             maskFeat=False,
             device=device
         )
-        ckpt_path = ""
-        self.teacher.load_state_dict(torch.load(ckpt_path,map_location='cpu'))
+
+        # Teacher checkpoint là optional cho realtime inference
+        if teacher_ckpt_path is not None and str(teacher_ckpt_path).strip() != "":
+            state = torch.load(teacher_ckpt_path, map_location="cpu")
+            self.teacher.load_state_dict(state, strict=False)
+            print(f"[INFO] Loaded teacher checkpoint: {teacher_ckpt_path}")
+        else:
+            print("[WARN] No teacher checkpoint provided for UsimKD teacher. "
+                  "Teacher head will use current/random weights unless included in student checkpoint.")
+
         for param in self.teacher.parameters():
             param.requires_grad = False
+        self.teacher.eval()
+
         self.teacher_classifier = self.teacher.head
-        
+
         self.student = UFOneView(
             num_classes=num_classes,
             maskFeat=False,
@@ -419,15 +502,15 @@ class UsimKD(nn.Module):
             pretrained_name=pretrained_name,
             device=device
         )
-   
-        s_n = embed_size  
-        t_n = embed_size * 3  
- 
+
+        s_n = embed_size
+        t_n = embed_size * 3
+
         self.projection = nn.Sequential(
-            nn.Linear(s_n,t_n*2),
-            nn.LayerNorm(t_n*2),
+            nn.Linear(s_n, t_n * 2),
+            nn.LayerNorm(t_n * 2),
             nn.GELU(),
-            nn.Linear(t_n*2,t_n)
+            nn.Linear(t_n * 2, t_n)
         )
 
         if device is not None:

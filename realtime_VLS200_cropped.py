@@ -1,6 +1,4 @@
 import argparse
-import csv
-import json
 import time
 from collections import deque
 from pathlib import Path
@@ -413,9 +411,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#python realtime_VLS200_cropped.py --config configs/Uniformer/test_cfg/UFOneView_MultiVSL200_realtime.yaml --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --camera-id 1 --show
-
+    
 '''
 Nhớ sửa biến default của label-map-csv
 Bật crop thì nhớ thêm tag "--use-slr-crop" vào mỗi cái script
