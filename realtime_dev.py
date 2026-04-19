@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from utils.misc import load_config, load_label_map
 from utils.utils import load_model
 from utils.video_augmentation import Compose, Resize, ToFloatTensor, PermuteImage, Normalize
-from slr_cropper import SLRCropper
+from vsl_realtime_refactor.slr_cropper import SLRCropper
 
 
 def build_test_transform(cfg: dict):
@@ -422,10 +422,10 @@ Có các input mode:
     "--input-mode webcam" + "--camera-url"
 '''
 # realtime webcam, cameraid:
-#python realtime_VLS200_cropped.py --input-mode webcam --camera-id 1 --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --use-slr-crop --show
+#python realtime_dev.py --input-mode webcam --camera-id 1 --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --use-slr-crop --show
 
 # realtime webcam, camera_url
-#python realtime_VLS200_cropped.py --input-mode webcam --camera-url "http://192.168.1.123:81/stream" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --use-slr-crop --show
+#python realtime_dev.py --input-mode webcam --camera-url "http://192.168.1.123:81/stream" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --use-slr-crop --show
 
 # video
-#python realtime_VLS200_cropped.py --input-mode video --video-path "Z:\SignLanguageReg\VSL_data\New folder\14_Bao-Nam_1-200_13-14-15_0112___center_device19_signer14_center_ord1_36.mp4" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --show 
+#python realtime_dev.py --input-mode video --video-path "Z:\SignLanguageReg\VSL_data\New folder\14_Bao-Nam_1-200_13-14-15_0112___center_device19_signer14_center_ord1_36.mp4" --checkpoint "Z:/SignLanguageReg/M3-SLR/checkpoint/uniformer_VSL.pth" --show 

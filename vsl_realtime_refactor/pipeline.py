@@ -11,8 +11,7 @@ import torch.nn.functional as F
 from utils.misc import load_config, load_label_map
 from utils.utils import load_model
 from utils.video_augmentation import Compose, Normalize, PermuteImage, Resize, ToFloatTensor
-from slr_cropper import SLRCropper
-
+from .slr_cropper import SLRCropper
 
 @dataclass(frozen=True)
 class ModelBundle:
